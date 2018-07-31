@@ -1,0 +1,58 @@
+#This is php5.6 Dockerfile
+#Version 1.0
+#Author: 260591808@qq.com
+
+#Base images
+FROM alpine
+
+#MAINTAINER
+MAINTAINER 260591808@qq.com
+
+RUN apk upgrade && apk add --no-cache gcc g++ make libxml2-dev openssl-dev icu-dev gettext-dev libxslt-dev freetype-dev libmcrypt-dev --repository http://mirrors.aliyun.com/alpine/v3.8/main/
+
+# install zlib
+ADD ./pkg/zlib-1.2.11.tar.gz /usr/local/src
+WORKDIR /usr/local/src/zlib-1.2.11
+RUN ./configure --prefix=/usr/local/zlib && make && make install
+
+# install libiconv
+ADD ./pkg/libiconv-1.15.tar.gz /usr/local/src
+WORKDIR /usr/local/src/libiconv-1.15
+RUN ./configure --prefix=/usr/local/iconv && make && make install
+
+# install curl
+ADD ./pkg/curl-7.61.0.tar.gz /usr/local/src
+WORKDIR /usr/local/src/curl-7.61.0
+RUN ./configure --prefix=/usr/local/curl && make && make install
+
+# install libjpeg
+ADD ./pkg/jpegsrc.v9c.tar.gz /usr/local/src
+WORKDIR /usr/local/src/jpeg-9c
+RUN ./configure --prefix=/usr/local/jpeg && make && make install
+
+# install libpng
+ADD ./pkg/libpng-1.6.34.tar.gz /usr/local/src
+WORKDIR /usr/local/src/libpng-1.6.34
+RUN ./configure --prefix=/usr/local/png && make && make install
+
+#install freetype
+ADD ./pkg/freetype-2.9.tar.gz /usr/local/src
+WORKDIR /usr/local/src/freetype-2.9
+RUN ./configure --prefix=/usr/local/freetype && make && make install
+
+# install php
+ADD ./pkg/php-5.6.36.tar.gz /usr/local/src
+WORKDIR /usr/local/src/php-5.6.36
+RUN ./configure --prefix=/usr/local/php --with-config-file-path=/usr/local/php/etc  --enable-fpm --with-fpm-user=www --with-fpm-group=www --with-mysql=mysqlnd  --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-iconv-dir=/usr/local/iconv --with-jpeg-dir=/usr/local/jpeg --with-png-dir=/usr/local/png --with-zlib-dir=/usr/local/zlib --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem  --enable-inline-optimization --with-curl=/usr/local/curl --enable-mbregex  --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf  --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc  --enable-zip --enable-soap --with-gettext --enable-opcache --enable-intl --with-xsl \
+    && make \
+    && make install \
+    && mkdir -p /usr/local/php/{etc,conf.d} \
+    && apk del gcc g++ make \
+    && rm -rf /usr/local/src/*
+
+COPY ./conf/php.ini /usr/local/php/etc/php.ini
+COPY ./conf/php-fpm.conf /usr/local/php/etc/php-fpm.conf
+
+EXPOSE 9000
+
+CMD ["/usr/local/php/sbin/php-fpm"]
